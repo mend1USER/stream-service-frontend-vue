@@ -1,98 +1,133 @@
-export const movies = [
-  {
-    title: 'Harry Potter',
-    poster:
-      'https://images0.persgroep.net/rcs/aH-I9wPZkzgrJx8F40hEV9_icy8/diocontent/116363694/_fitwidth/694/?appId=21791a8992982cd8da851550a453bd7f&quality=0.8&desiredformat=webp',
-    year: '2000',
-    id: '1',
-    rate: '8.4'
-  },
-  {
-    title: 'Lord of The rings',
-    poster:
-      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRO4sHCz3yHHQ8Ee0ME7vvpdbV5-70I0khw6g&usqp=CAU',
-    year: '2001',
-    id: '2',
-    rate: '8.4'
-  },
-  {
-    title: 'Shaun of the Dead',
-    poster:
-      'https://m.media-amazon.com/images/M/MV5BMjAxMjk5Nzk1NV5BMl5BanBnXkFtZTcwNTUwMzIyMw@@._V1_.jpg',
-    year: '2004',
-    id: '3',
-    rate: '8.4'
-  },
-  {
-    title: 'Hot Fuzz',
-    poster:
-      'https://static1.srcdn.com/wordpress/wp-content/uploads/2022/10/hot-fuzz-angel-and-danny-get-killed-by-grendel.jpg',
-    year: '2006',
-    id: '4',
-    rate: '8.4'
-  },
-  {
-    title: 'Harry Potter',
-    poster:
-      'https://images0.persgroep.net/rcs/aH-I9wPZkzgrJx8F40hEV9_icy8/diocontent/116363694/_fitwidth/694/?appId=21791a8992982cd8da851550a453bd7f&quality=0.8&desiredformat=webp',
-    year: '2000',
-    id: '5',
-    rate: '8.4'
-  },
-  {
-    title: 'Lord of The rings',
-    poster:
-      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRO4sHCz3yHHQ8Ee0ME7vvpdbV5-70I0khw6g&usqp=CAU',
-    year: '2001',
-    id: '6',
-    rate: '8.4'
-  },
-  {
-    title: 'Shaun of the Dead',
-    poster:
-      'https://m.media-amazon.com/images/M/MV5BMjAxMjk5Nzk1NV5BMl5BanBnXkFtZTcwNTUwMzIyMw@@._V1_.jpg',
-    year: '2004',
-    id: '7',
-    rate: '8.4'
-  },
-  {
-    title: 'Hot Fuzz',
-    poster:
-      'https://static1.srcdn.com/wordpress/wp-content/uploads/2022/10/hot-fuzz-angel-and-danny-get-killed-by-grendel.jpg',
-    year: '2006',
-    id: '8',
-    rate: '8.4'
-  },
-  {
-    title: 'Harry Potter',
-    poster:
-      'https://images0.persgroep.net/rcs/aH-I9wPZkzgrJx8F40hEV9_icy8/diocontent/116363694/_fitwidth/694/?appId=21791a8992982cd8da851550a453bd7f&quality=0.8&desiredformat=webp',
-    year: '2000',
-    id: '5',
-    rate: '8.4'
-  },
-  {
-    title: 'Lord of The rings',
-    poster:
-      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRO4sHCz3yHHQ8Ee0ME7vvpdbV5-70I0khw6g&usqp=CAU',
-    year: '2001',
-    id: '6',
-    rate: '8.4'
-  },
-  {
-    title: 'Shaun of the Dead',
-    poster:
-      'https://m.media-amazon.com/images/M/MV5BMjAxMjk5Nzk1NV5BMl5BanBnXkFtZTcwNTUwMzIyMw@@._V1_.jpg',
-    year: '2004',
-    id: '7',
-    rate: '8.4'
-  },
-  {
-    title: 'Hot Fuzz',
-    poster:
-      'https://static1.srcdn.com/wordpress/wp-content/uploads/2022/10/hot-fuzz-angel-and-danny-get-killed-by-grendel.jpg',
-    year: '2006',
-    id: '8',
-    rate: '8.4'
+import {defineStore} from 'pinia'
+import {http} from '../api/http'
+
+
+export interface MovieSearchResult {
+  id: string
+  title: string
+  poster: string
+  year: string
+  rate: string
+}
+
+
+export interface CastMember {
+  name: string
+  character: string
+  photo: string
+}
+
+export interface ProductionCompanyInfo {
+  name: string
+  logo: string
+}
+
+export interface MovieDetails {
+  title: string
+  originalTitle?: string
+  tagline?: string
+  plot: string
+  year: string
+  director: string
+  actors: CastMember[]
+  poster: string
+  backdrop: string
+  trailer: string
+  boxOffice: string
+  budget?: string
+  released: string
+  writer: string
+  runtime: string
+  ratingImdb: string
+  voteCount?: number
+  status?: string
+  imdbId: string
+  rated: string
+  genres: string[]
+  productionCompanies?: ProductionCompanyInfo[]
+  spokenLanguages?: string[]
+}
+
+
+interface MovieState {
+  searchTerm: string;
+  searchResults: MovieSearchResult[]
+  isSearching: boolean
+  searchError: string | null
+  hasSearched: boolean
+
+  currentMovie: MovieDetails | null
+  isLoading: boolean
+  movieError: string | null
+}
+
+export const useMovieStore = defineStore('movies', {
+  state: (): MovieState => ({
+    searchTerm: '',
+    searchResults: [],
+    isSearching: false,
+    searchError: null,
+    hasSearched: false,
+
+    currentMovie: null,
+    isLoading: false,
+    movieError: null
+  }),
+
+  actions: {
+    async searchMovies(term: string) {
+      const query = term.trim()
+      this.searchTerm = query
+
+      if(!query) {
+        this.searchResults = []
+        this.hasSearched = false
+        return
+      }
+
+      this.isSearching = true
+      this.searchError = null
+
+
+      try {
+        const {data} = await http.get<MovieSearchResult[]>('/movies/imdb-search', {
+          params: {searchTerm: query}
+        })
+
+        this.searchResults = data
+      } catch (error) {
+        this.searchError = 'Не Удалось Выполнить Поиск. Попробуйте еще раз!'
+        this.searchResults = []
+      } finally {
+        this.isSearching = false
+        this.hasSearched = true
+      }
+    },
+
+
+    async fetchMovie(id: string) {
+      this.isLoading = true
+      this.movieError = null
+      this.currentMovie = null
+      
+
+      try {
+        const {data} = await http.get<MovieDetails>(`/movies/imdb/${id}`)
+        this.currentMovie = data
+      } catch (error) {
+        this.movieError = 'Не Удалось Загрузить Информацию о Фильме.'
+        
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+
+    clearSearch() {
+      this.searchTerm = ''
+      this.searchResults = []
+      this.searchError = null
+      this.hasSearched = false
+    }
   }
-]
+})

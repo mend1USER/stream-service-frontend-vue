@@ -5,7 +5,7 @@ export const router = createRouter({
     history: createWebHistory(),
     routes: [{
         name: 'home',
-        path: '/',
+        path: '/main',
         component: () => import('./pages/Home.vue')
     },
         {
@@ -14,8 +14,14 @@ export const router = createRouter({
             component: () => import('./pages/Search.vue')
         },
         {
+            name: 'MoviePlayer',
+            path: '/player',
+            component: () => import('./pages/Movie.vue')
+        },
+        {
             name: 'movie',
             path: '/movies/:id',
-            component: () => import('./pages/Movie.vue')
+            component: () => import('./pages/MovieDetails.vue'),
+            props: true
         }]
 })

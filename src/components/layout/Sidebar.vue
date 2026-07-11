@@ -27,13 +27,13 @@ const route = useRoute()
 
   const menu = [
     {
-        to: '/', icon: HomeIcon, activIcons: HomeSolidIcon
+        to: '/main', icon: HomeIcon, activIcons: HomeSolidIcon
     },
     {
        to: '/search', icon: MagnifyingGlassIcon, activIcons: MagnifyingGlassSolidIcon
    },
      {
-        to: '/movies/1', icon: FilmIcon, activIcons: FilmSolidIcon
+        to: '/player', icon: FilmIcon, activIcons: FilmSolidIcon
     }
   ]
    
