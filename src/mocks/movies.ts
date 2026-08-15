@@ -1,5 +1,6 @@
-import {defineStore} from 'pinia'
-import {http} from '../api/http'
+import { defineStore } from 'pinia'
+import { http } from '../api/http'
+import { sortTorrentsByQuality, excludeUHD } from './torrentUtility'
 
 
 export interface MovieSearchResult {
@@ -9,6 +10,19 @@ export interface MovieSearchResult {
   year: string
   rate: string
 }
+
+export interface TorrentFile {
+  name: string
+  length: number
+}
+
+export interface TorrentSearchResult {
+  title: string
+  magnet: string
+  torrentUrl: string
+}
+
+
 
 
 export interface CastMember {
@@ -48,9 +62,8 @@ export interface MovieDetails {
   spokenLanguages?: string[]
 }
 
-
 interface MovieState {
-  searchTerm: string;
+  searchTerm: string
   searchResults: MovieSearchResult[]
   isSearching: boolean
   searchError: string | null
@@ -59,6 +72,11 @@ interface MovieState {
   currentMovie: MovieDetails | null
   isLoading: boolean
   movieError: string | null
+
+  activeMagnet: string | null
+  torrentFiles: TorrentFile[]
+  isTorrentLoading: boolean
+  torrentError: string | null
 }
 
 export const useMovieStore = defineStore('movies', {
@@ -71,7 +89,12 @@ export const useMovieStore = defineStore('movies', {
 
     currentMovie: null,
     isLoading: false,
-    movieError: null
+    movieError: null,
+
+    activeMagnet: null,
+    torrentFiles: [],
+    isTorrentLoading: false,
+    torrentError: null
   }),
 
   actions: {
@@ -79,7 +102,7 @@ export const useMovieStore = defineStore('movies', {
       const query = term.trim()
       this.searchTerm = query
 
-      if(!query) {
+      if (!query) {
         this.searchResults = []
         this.hasSearched = false
         return
@@ -88,15 +111,13 @@ export const useMovieStore = defineStore('movies', {
       this.isSearching = true
       this.searchError = null
 
-
       try {
-        const {data} = await http.get<MovieSearchResult[]>('/movies/imdb-search', {
-          params: {searchTerm: query}
+        const { data } = await http.get<MovieSearchResult[]>('/movies/imdb-search', {
+          params: { searchTerm: query }
         })
-
         this.searchResults = data
       } catch (error) {
-        this.searchError = 'Не Удалось Выполнить Поиск. Попробуйте еще раз!'
+        this.searchError = 'Не удалось выполнить поиск. Попробуйте еще раз!'
         this.searchResults = []
       } finally {
         this.isSearching = false
@@ -104,24 +125,132 @@ export const useMovieStore = defineStore('movies', {
       }
     },
 
-
     async fetchMovie(id: string) {
       this.isLoading = true
       this.movieError = null
       this.currentMovie = null
-      
 
       try {
-        const {data} = await http.get<MovieDetails>(`/movies/imdb/${id}`)
+        const { data } = await http.get<MovieDetails>(`/movies/imdb/${id}`)
         this.currentMovie = data
       } catch (error) {
-        this.movieError = 'Не Удалось Загрузить Информацию о Фильме.'
-        
+        this.movieError = 'Не удалось загрузить информацию о фильме.'
       } finally {
         this.isLoading = false
       }
     },
 
+    
+async findTorrentsForMovie(title: string, originalTitle: string, year?: string): Promise<TorrentSearchResult[]> {
+  try {
+    const { data } = await http.get<TorrentSearchResult[]>('/movies/search', {
+      params: {
+        searchTerm: originalTitle || title,
+        title,
+        originalTitle,
+        year
+      }
+    })
+
+    return data ?? []
+  } catch (error) {
+    console.error('Ошибка поиска торрентов:', error)
+    return []
+  }
+},
+
+async findWorkingStream(torrents: TorrentSearchResult[], maxAttempts = 3): Promise<string> {
+  this.isTorrentLoading = true
+  this.torrentError = null
+
+
+  const filtered = excludeUHD(torrents)
+  const sorted = sortTorrentsByQuality(filtered.length > 0 ? filtered : torrents)
+
+  const candidates = sorted.slice(0, maxAttempts)
+
+  for (let i = 0; i < candidates.length; i++) {
+    const torrent = candidates[i]
+    if (!torrent.magnet) continue
+
+    try {
+      const streamUrl = await this.initTorrentStream(torrent.magnet)
+      this.isTorrentLoading = false
+      return streamUrl 
+    } catch (err) {
+      console.warn(`Раздача ${i + 1}/${candidates.length} не сработала:`, torrent.title)
+      continue
+    }
+  }
+
+  this.isTorrentLoading = false
+  this.torrentError = 'Не удалось найти рабочую раздачу среди доступных вариантов.'
+  throw new Error(this.torrentError)
+},
+
+   async initTorrentStream(magnet: string): Promise<string> {
+  this.isTorrentLoading = true
+  this.torrentError = null
+  this.activeMagnet = magnet
+
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 20000) // 20 сек на попытку
+
+  try {
+    const safeMagnet = encodeURIComponent(magnet)
+    const response = await http.get(`/stream/add/${safeMagnet}`, {
+      signal: controller.signal
+    })
+    clearTimeout(timeoutId)
+
+    const files = response.data
+    if (!files || files.length === 0) {
+      throw new Error('В этой раздаче не найдено подходящих файлов.')
+    }
+
+    let videoFile = files
+      .filter((f: any) => /\.mp4$/i.test(f.name))
+      .sort((a: any, b: any) => b.length - a.length)[0]
+
+    if (!videoFile) {
+      videoFile = files
+        .filter((f: any) => /\.(mkv|mp4|avi)$/i.test(f.name))
+        .sort((a: any, b: any) => b.length - a.length)[0]
+    }
+
+    if (!videoFile) {
+      throw new Error('В раздаче не найден видеофайл.')
+    }
+
+    this.torrentFiles = files
+
+    const safeFileName = encodeURIComponent(videoFile.name)
+    return `http://localhost:5000/stream/${safeMagnet}/${safeFileName}`
+  } catch (err: any) {
+    clearTimeout(timeoutId)
+    const message = err.name === 'CanceledError' || err.name === 'AbortError'
+      ? 'Раздача не отвечает (таймаут).'
+      : (err.response?.data?.message || err.message || 'Ошибка инициализации стрима')
+    this.torrentError = message
+    throw new Error(message)
+  } finally {
+    this.isTorrentLoading = false
+  }
+},
+
+    async stopTorrentStream() {
+      if (!this.activeMagnet) return
+
+      try {
+        const safeMagnet = encodeURIComponent(this.activeMagnet)
+        await http.delete(`/stream/remove/${safeMagnet}`)
+      } catch (error) {
+        console.error('Не удалось удалить торрент из памяти:', error)
+      } finally {
+        this.activeMagnet = null
+        this.torrentFiles = []
+      }
+    },
 
     clearSearch() {
       this.searchTerm = ''

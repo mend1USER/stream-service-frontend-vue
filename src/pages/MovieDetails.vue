@@ -8,7 +8,6 @@
   </p>
 
   <div v-else-if="store.currentMovie" class="h-full min-w-0 flex-1 overflow-y-auto bg-movie-black-200">
-    <!-- Hero / Backdrop -->
     <div class="relative h-[62vh] w-full overflow-hidden">
       <img
         v-if="store.currentMovie.backdrop"
@@ -102,19 +101,32 @@
             :href="store.currentMovie.trailer"
             target="_blank"
             rel="noopener noreferrer"
-            class="inline-flex items-center gap-2 rounded-full bg-oranje py-2.5 pl-3 pr-5 font-semibold text-white transition-transform hover:scale-[1.03] active:scale-[0.98]"
+            class="inline-flex items-center gap-2 rounded-full bg-white/10 py-2.5 pl-3 pr-5 font-semibold text-white ring-1 ring-white/10 transition-transform hover:scale-[1.03] hover:bg-white/20 active:scale-[0.98]"
           >
             <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
             Трейлер
           </a>
         </div>
+
+        <!-- Кнопка Смотреть  -->
+        <div class="mt-1">
+          <button
+            @click="handleWatchClick"
+            :disabled="isSearchingTorrent"
+            class="inline-flex items-center gap-3 rounded-full bg-oranje px-8 py-3.5 text-lg font-bold text-white shadow-lg transition-all hover:bg-orange-600 active:scale-[0.98] disabled:opacity-50"
+          >
+            <span v-if="isSearchingTorrent" class="h-5 w-5 animate-spin rounded-full border-b-2 border-white"></span>
+            <svg v-else viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+            <span>{{ isSearchingTorrent ? 'Ищем раздачи...' : 'Смотреть фильм онлайн' }}</span>
+          </button>
+          <p v-if="torrentSearchError" class="mt-2 max-w-xl text-sm text-red-500">{{ torrentSearchError }}</p>
+        </div>
+        <!-- кнопка смотреть -->
       </div>
     </div>
 
-    <!-- Body -->
     <div class="reveal reveal--delay-2 mx-auto mt-12 max-w-6xl px-4 pb-16">
       <div class="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_300px]">
-        <!-- Main column -->
         <div class="flex flex-col gap-12">
           <div>
             <h2 class="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-gray-600">Описание</h2>
@@ -126,7 +138,6 @@
           <movie-cast v-if="store.currentMovie.actors?.length" :actors="store.currentMovie.actors" />
         </div>
 
-        <!-- Dossier sidebar -->
         <aside class="h-fit overflow-hidden rounded-xl bg-movie-black-300/60 ring-1 ring-white/5">
           <div class="clapperboard-bar"></div>
           <div class="px-5 py-2">
@@ -169,13 +180,14 @@
 
 <script lang="ts" setup>
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useMovieStore } from '../mocks/movies.ts'
 import FactRow from '../components/FactRow.vue'
 import MovieCast from '../components/MovieCast.vue'
 
 const props = defineProps<{ id: string }>()
 const route = useRoute()
+const router = useRouter()
 const store = useMovieStore()
 
 onMounted(() => {
@@ -187,12 +199,13 @@ watch(
   (newId) => {
     if (newId) {
       ringAnimated.value = false
+      torrentSearchError.value = ''
       store.fetchMovie(newId as string)
     }
   }
 )
 
-// Rating ring
+// Рейтинг
 const RADIUS = 30
 const ringCircumference = 2 * Math.PI * RADIUS
 const ringAnimated = ref(false)
@@ -237,10 +250,45 @@ const formatMoney = (value?: string | number) => {
   const num = Number(value)
   return num ? `$${num.toLocaleString('ru-RU')}` : ''
 }
+
+// основная логика для пойска рабочей магнет ссылки 
+const isSearchingTorrent = ref(false)
+const torrentSearchError = ref('')
+
+const handleWatchClick = async () => {
+  if (!store.currentMovie) return
+
+  try {
+    isSearchingTorrent.value = true
+    torrentSearchError.value = ''
+
+    const title = store.currentMovie.title
+    const originalTitle = store.currentMovie.originalTitle || store.currentMovie.title
+    const movieYear = store.currentMovie.year
+
+    const torrents = await store.findTorrentsForMovie(title, originalTitle, movieYear)
+
+    if (!torrents || torrents.length === 0) {
+      throw new Error('К сожалению, не удалось найти активных раздач для этого фильма на Rutor.')
+    }
+
+    // findWorkingStream сам перебирает раздачи и кладёт рабочий magnet в store.activeMagnet
+    await store.findWorkingStream(torrents)
+
+    router.push({
+      name: 'MoviePlayer',
+      query: { magnet: store.activeMagnet } // берём именно ту раздачу, что реально заработала
+    })
+  } catch (err: any) {
+    console.error(err)
+    torrentSearchError.value = err.message || 'Ошибка поиска раздач.'
+  } finally {
+    isSearchingTorrent.value = false
+  }
+}
 </script>
 
 <style scoped>
-/* Film strip perforation, sits inside the hero, behind the poster */
 .film-sprockets {
   height: 14px;
   background-color: rgba(0, 0, 0, 0.55);
@@ -249,7 +297,6 @@ const formatMoney = (value?: string | number) => {
   background-position: 8px center;
 }
 
-/* Clapperboard striped header */
 .clapperboard-bar {
   height: 10px;
   background: repeating-linear-gradient(
