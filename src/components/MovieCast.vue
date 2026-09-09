@@ -24,7 +24,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { CastMember } from '../mocks/movies.ts'
+import type { CastMember } from '../store/movies.ts'
 
 defineProps<{
   actors: CastMember[]

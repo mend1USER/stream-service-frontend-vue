@@ -23,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import type { MovieSearchResult } from '../mocks/movies';
+import type { MovieSearchResult } from '../store/movies';
 
 
 defineProps<{

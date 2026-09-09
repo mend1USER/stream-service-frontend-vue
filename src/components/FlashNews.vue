@@ -1,6 +1,6 @@
     <script setup lang="ts">
     import {ArrowRightIcon, ArrowLeftIcon} from '@heroicons/vue/24/solid'
-    import { flashNews } from '../mocks/news.ts';
+    import { flashNews } from '../store/news.ts';
     import Stack from './layout/Stack.vue';
     import { ref, computed } from 'vue';
 

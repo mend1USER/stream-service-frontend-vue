@@ -40,7 +40,7 @@
 import {ref} from 'vue'
 import Page from '../components/layout/Page.vue';
 import MovieSearchCard from '../components/MovieSearchCard.vue';
-import { useMovieStore } from '../mocks/movies.ts';
+import { useMovieStore } from '../store/movies.ts';
 
 const store = useMovieStore()
 const inputValue = ref('')

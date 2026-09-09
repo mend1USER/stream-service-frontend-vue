@@ -21,7 +21,7 @@
 import {ref} from 'vue'
 import Tabs from '../components/Tabs.vue';
 import Page from '../components/layout/Page.vue';
-import {tabs as tabsMocks } from '../mocks/tabs.ts';
+import {tabs as tabsMocks } from '../store/tabs.ts';
 import MainBanner from '../components/MainBanner.vue';
 import MovieFeed from '../components/MovieFeed.vue';
 import FlashNews from '../components/FlashNews.vue';

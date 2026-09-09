@@ -110,7 +110,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useMovieStore } from '../mocks/movies' 
+import { useMovieStore } from '../store/movies.ts' 
 import TimeControl from '../components/Player/TimeControl.vue'
 // import VolumeControl from '../components/Player/VolumeControl.vue'
 
