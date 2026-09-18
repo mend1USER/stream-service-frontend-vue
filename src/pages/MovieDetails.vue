@@ -24,9 +24,7 @@
       <div class="film-sprockets pointer-events-none absolute inset-x-0 bottom-0 z-0"></div>
     </div>
 
-    <!-- Title block -->
     <div class="relative z-20 mx-auto -mt-48 flex max-w-6xl flex-col gap-8 px-4 md:flex-row">
-      <!-- Poster -->
       <img
         v-if="store.currentMovie.poster"
         :src="store.currentMovie.poster"
@@ -68,7 +66,6 @@
         </p>
 
         <div class="mt-1 flex flex-wrap items-center gap-6">
-          <!-- Rating ring -->
           <div v-if="store.currentMovie.ratingImdb" class="flex items-center gap-3">
             <div class="relative h-16 w-16 shrink-0" :class="ratingColorClass">
               <svg viewBox="0 0 72 72" class="h-16 w-16 -rotate-90">
@@ -108,7 +105,6 @@
           </a>
         </div>
 
-        <!-- Кнопка Смотреть  -->
         <div class="mt-1">
           <button
             @click="handleWatchClick"
@@ -121,7 +117,6 @@
           </button>
           <p v-if="torrentSearchError" class="mt-2 max-w-xl text-sm text-red-500">{{ torrentSearchError }}</p>
         </div>
-        <!-- кнопка смотреть -->
       </div>
     </div>
 
@@ -205,7 +200,6 @@ watch(
   }
 )
 
-// Рейтинг
 const RADIUS = 30
 const ringCircumference = 2 * Math.PI * RADIUS
 const ringAnimated = ref(false)
@@ -251,7 +245,6 @@ const formatMoney = (value?: string | number) => {
   return num ? `$${num.toLocaleString('ru-RU')}` : ''
 }
 
-// основная логика для пойска рабочей магнет ссылки 
 const isSearchingTorrent = ref(false)
 const torrentSearchError = ref('')
 
@@ -272,12 +265,11 @@ const handleWatchClick = async () => {
       throw new Error('К сожалению, не удалось найти активных раздач для этого фильма на Rutor.')
     }
 
-    // findWorkingStream сам перебирает раздачи и кладёт рабочий magnet в store.activeMagnet
     await store.findWorkingStream(torrents)
 
     router.push({
       name: 'MoviePlayer',
-      query: { magnet: store.activeMagnet } // берём именно ту раздачу, что реально заработала
+      query: { magnet: store.activeMagnet }
     })
   } catch (err: any) {
     console.error(err)

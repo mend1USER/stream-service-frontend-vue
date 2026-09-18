@@ -13,7 +13,6 @@
       </button>
     </div>
 
-    <!-- Плеер -->
     <div
       v-else
       ref="playerContainer"
@@ -112,7 +111,6 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMovieStore } from '../store/movies.ts' 
 import TimeControl from '../components/Player/TimeControl.vue'
-// import VolumeControl from '../components/Player/VolumeControl.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -160,11 +158,7 @@ const onTimeChange = (value: number) => {
   }
 }
 
-// const onVolumeChange = (value: number) => {
-//   if (video.value) {
-//     video.value.volume = value
-//   }
-// }
+
 
 const togglePlay = () => {
   if (!video.value) return

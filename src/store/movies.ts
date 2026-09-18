@@ -3,7 +3,11 @@ import { http } from '../api/http'
 import { sortTorrentsByQuality, excludeUHD } from './torrentUtility'
 
 
+
 export interface MovieSearchResult {
+  release_date(release_date: any): unknown
+  vote_average: any
+  poster_path: any
   id: string
   title: string
   poster: string
@@ -36,6 +40,23 @@ export interface ProductionCompanyInfo {
   logo: string
 }
 
+
+export interface BannerMovie {
+  id: string
+  title: string
+  year: string
+  rate: string
+  backdrop: string
+}
+
+export interface FlashNewsSpotlight {
+  id: string
+  title: string
+  year: string
+  rate: string
+  frames: string[]
+}
+
 export interface MovieDetails {
   title: string
   originalTitle?: string
@@ -63,6 +84,9 @@ export interface MovieDetails {
 }
 
 interface MovieState {
+  popularMovies: MovieSearchResult[]
+    isLoadingPopular: boolean
+
   searchTerm: string
   searchResults: MovieSearchResult[]
   isSearching: boolean
@@ -72,6 +96,13 @@ interface MovieState {
   currentMovie: MovieDetails | null
   isLoading: boolean
   movieError: string | null
+
+
+  bannerMovie: BannerMovie | null,
+isLoadingBanner: boolean,
+
+flashNewsMovie: FlashNewsSpotlight | null,
+isLoadingFlashNews: boolean,
 
   activeMagnet: string | null
   torrentFiles: TorrentFile[]
@@ -86,6 +117,15 @@ export const useMovieStore = defineStore('movies', {
     isSearching: false,
     searchError: null,
     hasSearched: false,
+    popularMovies: [],
+isLoadingPopular: false,
+
+bannerMovie: null,
+isLoadingBanner: false,
+
+flashNewsMovie: null,
+isLoadingFlashNews: false,
+
 
     currentMovie: null,
     isLoading: false,
@@ -139,6 +179,48 @@ export const useMovieStore = defineStore('movies', {
         this.isLoading = false
       }
     },
+
+
+    async fetchPopularMovies() {
+     this.isLoadingPopular = true 
+     try {
+      const {data} = await http.get<MovieSearchResult[]>('/movies/popular')
+      this.popularMovies = data
+     } catch (error) {
+      console.error('Не удалось загрузить популярные фильмы:', error)
+    this.popularMovies = []
+     } finally {
+      this.isLoadingPopular = false
+     }
+    },
+
+
+    async fetchBannerMovie() {
+  this.isLoadingBanner = true
+  try {
+    const { data } = await http.get<BannerMovie>('/movies/banner')
+    this.bannerMovie = data
+  } catch (error) {
+    console.error('Не удалось загрузить баннер:', error)
+    this.bannerMovie = null
+  } finally {
+    this.isLoadingBanner = false
+  }
+},
+
+
+async fetchFlashNews() {
+  this.isLoadingFlashNews = true
+  try {
+    const { data } = await http.get<FlashNewsSpotlight>('/movies/flash-news')
+    this.flashNewsMovie = data
+  } catch (error) {
+    console.error('Не удалось загрузить flash news:', error)
+    this.flashNewsMovie = null
+  } finally {
+    this.isLoadingFlashNews = false
+  }
+},
 
     
 async findTorrentsForMovie(title: string, originalTitle: string, year?: string): Promise<TorrentSearchResult[]> {

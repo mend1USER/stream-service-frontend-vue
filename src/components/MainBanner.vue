@@ -1,41 +1,32 @@
 <script setup lang="ts">
-interface Banner {
-  title: string
-  plot: string
-  year: string
-  id: string
-  genre: string
-  duration: string
-  poster: string
-}
+import { computed, watch, onMounted } from 'vue'
+import { useMovieStore } from '../store/movies.ts'
 
-const bannerMock: Banner = {
-  title: 'Interstellar',
-  plot: 'When Earth becomes uninhabitable in the future, a framer and ex-NASA pilot, Joseph Cooper tasks to pilot a spacecraft along with a team of researchers, to find a new planet for humans',
-  year: '2014',
-  id: '1',
-  genre: 'Fiction',
-  duration: '1h 53min',
-  poster:
-    'https://c4.wallpaperflare.com/wallpaper/522/353/227/cooper-girl-house-clouds-wallpaper-preview.jpg'
-}
+const store = useMovieStore()
 
-const bg = `url(${bannerMock.poster})`
+onMounted(() => {
+  if (!store.bannerMovie) {
+    store.fetchBannerMovie()
+  }
+})
+
+watch(() => store.bannerMovie, (val) => console.log('bannerMovie:', val))
+
+const bg = computed(() =>
+  store.bannerMovie?.backdrop ? `url(${store.bannerMovie.backdrop})` : ''
+)
 </script>
 
 <template>
-  <div class="banner flex p-8 w-full rounded-2xl drop-shadow-xl cursor-pointer">
+  <div
+    v-if="store.bannerMovie"
+    class="banner flex p-8 w-full rounded-2xl drop-shadow-xl cursor-pointer"
+  >
     <div class="text-white self-end">
-      <h1 class="text-4xl mb-2 font-bold">{{ bannerMock.title }}</h1>
-      <p>{{ bannerMock.plot }}</p>
+      <h1 class="text-4xl mb-2 font-bold">{{ store.bannerMovie.title }}</h1>
       <div class="mt-6 flex justify-between w-[30%]">
-        <span>{{ bannerMock.year }}</span>
-        <span>
-          {{ bannerMock.genre }}
-        </span>
-        <span>
-          {{ bannerMock.duration }}
-        </span>
+        <span>{{ store.bannerMovie.year }}</span>
+        <span>★ {{ store.bannerMovie.rate }}</span>
       </div>
     </div>
   </div>
