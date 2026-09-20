@@ -139,6 +139,7 @@ isLoadingFlashNews: false,
 
   actions: {
     async searchMovies(term: string) {
+      this.isLoading = true
       const query = term.trim()
       this.searchTerm = query
 
@@ -162,6 +163,7 @@ isLoadingFlashNews: false,
       } finally {
         this.isSearching = false
         this.hasSearched = true
+        this.isLoading = false
       }
     },
 

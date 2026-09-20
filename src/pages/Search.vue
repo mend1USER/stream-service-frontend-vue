@@ -25,7 +25,8 @@
             Ничего не Нашлось По Запросу <<{{ store.searchTerm }}>>
         </p>
 
-        <div class="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <loader v-if="store.isLoading" size="md" label="Ищем Фильмы"/>
+        <div v-else class="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             <movie-search-card 
             v-for="movie in store.searchResults"
             :key="movie.id"
@@ -39,6 +40,7 @@
 <script lang="ts" setup>
 import {ref} from 'vue'
 import Page from '../components/layout/Page.vue';
+import Loader from '../components/Loader.vue';
 import MovieSearchCard from '../components/MovieSearchCard.vue';
 import { useMovieStore } from '../store/movies.ts';
 

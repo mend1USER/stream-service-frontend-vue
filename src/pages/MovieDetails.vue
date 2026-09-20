@@ -1,7 +1,7 @@
 <template>
-  <div v-if="store.isLoading" class="flex h-full min-w-0 flex-1 items-center justify-center text-gray-400">
+  <loader v-if="store.isLoading" full-height label="Загружаем информацию о фильме..." >
     Загружаем информацию о фильме...
-  </div>
+  </loader>
 
   <p v-else-if="store.movieError" class="mx-4 mt-8 text-red-500">
     {{ store.movieError }}
@@ -179,6 +179,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useMovieStore } from '../store/movies.ts'
 import FactRow from '../components/FactRow.vue'
 import MovieCast from '../components/MovieCast.vue'
+import Loader from '../components/Loader.vue'
 
 const props = defineProps<{ id: string }>()
 const route = useRoute()
