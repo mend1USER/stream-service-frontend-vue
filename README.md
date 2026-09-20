@@ -1,5 +1,74 @@
-# Vue 3 + TypeScript + Vite
+# Stream Service Frontend
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Vue 3 frontend для учебного стримингового pet-проекта. Каталог фильмов на данных TMDB, поиск раздач и кастомный видеоплеер с потоковым воспроизведением через WebTorrent-бекенд.
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+## Стек
+
+- **Vue 3** (Composition API, `<script setup>`)
+- **TypeScript**
+- **Vite**
+- **Pinia** — управление состоянием
+- **Vue Router 5**
+- **Tailwind CSS 4**
+- **Axios**
+
+## Архитектура
+
+```
+src/
+├── main.ts
+├── App.vue                     # общий layout: Sidebar + router-view
+├── router/
+│   └── index.ts                 # маршруты приложения
+├── store/
+│   └── movies.ts                 # единый Pinia store: поиск, детали, торренты
+├── api/
+│   ├── http.ts                   # настроенный axios-инстанс
+│   └── health.ts                  # проверка связи с backend
+├── pages/
+│   ├── Home.vue                   # главная: баннер, подборка, лента
+│   ├── Search.vue                 # поиск фильмов
+│   ├── MovieDetails.vue           # карточка фильма + запуск просмотра
+│   └── Movie.vue                  # видеоплеер
+└── components/
+    ├── layout/                    # Page, Sidebar, Stack
+    ├── MainBanner.vue              # промо-баннер (случайный популярный фильм)
+    ├── FlashNews.vue                # карусель кадров фильма
+    ├── MovieFeed.vue                 # лента трендовых фильмов
+    ├── MovieSearchCard.vue            # карточка результата поиска
+    ├── MovieCast.vue                   # сетка актёров
+    ├── FactRow.vue                      # строка характеристики (режиссёр, бюджет и т.д.)
+    └── Player/
+        ├── TimeControl.vue              # прогресс-бар воспроизведения
+        └── Volume.vue                    # регулятор громкости
+```
+
+## Как это работает
+
+1. **Главная страница** — три независимых запроса к backend: случайный фильм для баннера, кадры другого фильма для карусели, список трендовых фильмов для ленты.
+2. **Поиск** (`Search.vue`) — ввод названия, запрос к TMDB через backend, результаты в адаптивной grid-сетке карточек.
+3. **Детали фильма** (`MovieDetails.vue`) — полная информация (описание, актёры, бюджет, рейтинг с анимированным SVG-кольцом). По клику "Смотреть":
+   - backend ищет раздачи по названию/году на rutor.info,
+   - фронт сортирует найденные раздачи по качеству и перебирает их, пока не найдёт рабочую,
+   - при успехе — переход на страницу плеера с magnet-ссылкой в query-параметре.
+4. **Плеер** (`Movie.vue`) — кастомный видеоплеер на нативном `<video>`: собственные контролы (play/pause, перемотка, громкость, fullscreen), авто-скрытие панели при бездействии, индикатор буферизации.
+
+## Установка и запуск
+
+```bash
+npm install
+```
+
+Создай `.env` в корне:
+
+```
+VITE_API_URL=http://localhost:5000
+```
+
+```bash
+npm run dev       # локальный сервер разработки (Vite)
+npm run build     # сборка (включает проверку типов через vue-tsc)
+npm run preview   # предпросмотр сборки
+```
+
+> Backend должен быть запущен отдельно — см. README backend-репозитория.
